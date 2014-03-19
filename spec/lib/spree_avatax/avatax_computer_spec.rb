@@ -4,16 +4,48 @@ describe SpreeAvatax::AvataxComputer do
   let(:total_tax) { 5.00 }
   let(:computer) { SpreeAvatax::AvataxComputer.new }
   let(:tax_rate) { double(Spree::TaxRate, amount: 50.00, tax_category: 'Foo') }
-  let(:invoice_tax) { double(Avalara::Response, total_tax: total_tax) }
+  let(:invoice_tax) { double(Avalara::Response, total_tax: total_tax, tax_lines: []) }
   let(:order) { FactoryGirl.create(:order_with_line_items, ship_address: FactoryGirl.create(:ship_address)) }
+  let(:tuple_matcher) { SpreeAvatax::AvataxTupleMatcher.new }
   let(:context) do  
     order.stub(:build_line_items).and_return(order.line_items)
     order
   end
 
+  describe 'associate_line_item_taxes' do
+    let(:tax_lines) do
+      [
+        double(Avalara::Response::TaxLine, line_no: '1', tax: 9.99)
+      ]
+    end
+
+    let(:invoice_tax) { double(Avalara::Response, total_tax: total_tax, tax_lines: tax_lines) }
+      
+    before do
+      tuple_matcher.add_tuple(SpreeAvatax::AvataxTuple.new(
+        spree_line_item: order.line_items.first,
+        avatax_request_line: Avalara::Request::Line.new(line_no: '1', destination_code: 'Code', origin_code: 'Fred', qty: 1, amount: 10.00)
+      ))
+    end
+
+    subject do
+      computer.associate_line_item_taxes(invoice_tax, tuple_matcher)
+    end
+
+    it 'should have assigned the tax line to the tuple' do
+      subject
+      tuple_matcher.store[1].avatax_response_tax_line.should_not be_nil
+    end
+
+    it 'should assign 9.99 to line_item tax' do
+      subject
+      order.line_items.first.additional_tax_total.to_f.should == 9.99
+    end
+  end
+
   describe 'build_invoice_lines' do
     subject do
-      computer.build_invoice_lines(order, order.line_items)
+      computer.build_invoice_lines(order, order.line_items, tuple_matcher)
     end
 
     it 'should have 5 invoice lines' do
@@ -22,6 +54,11 @@ describe SpreeAvatax::AvataxComputer do
 
     it 'should contain Avalara::Request::Line' do
       subject.first.should be_a(Avalara::Request::Line)
+    end
+
+    it 'should have 5 tuples in the tuple matcher' do
+      subject
+      tuple_matcher.store.size.should == 5
     end
   end
 
@@ -108,6 +145,7 @@ describe SpreeAvatax::AvataxComputer do
     context 'when valid order and context as order' do
       context 'when computing a Spree:Order' do
         before do
+          computer.should_receive(:associate_line_item_taxes).once
           Avalara.should_receive(:get_tax).once.and_return(invoice_tax)
         end
 

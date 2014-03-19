@@ -58,6 +58,10 @@ describe Avalara do
         result.total_amount.to_i.should == 1000
         result.total_tax.to_f.should == 88.75
         result.total_tax_calculated.to_f.should == 88.75
+
+        result.tax_lines.size.should == 1
+        result.tax_lines.first.line_no.should_not be_nil
+        result.tax_lines.first.tax.should_not be_nil
       end
     end
 

@@ -88,12 +88,43 @@ describe Spree::Calculator::Avatax do
   end
 
   describe 'avatax_compute_line_item' do
-    before do
-      calculator.should_receive(:rate).at_least(1).and_return(tax_rate)
+    let(:line_item) { FactoryGirl.create(:line_item) }
+    let(:order) { line_item.order }
+    let(:cache_key) { calculator.send(:cache_key, order) }
+
+    subject { calculator.send(:avatax_compute_line_item, line_item) }
+
+    it 'should call compute_order_with_context' do
+      SpreeAvatax::AvataxComputer.any_instance.should_receive(:compute_order_with_context).once.with(line_item.order, calculator)
+      subject
     end
 
-    it 'should invoke Calculator::DefaultTax' do
-      calculator.send(:avatax_compute_line_item, FactoryGirl.create(:line_item))
+    it 'writes to the cache' do
+      subject
+      Rails.cache.exist?(cache_key) 
+    end
+
+    it 'tries to read from the cache' do
+      Rails.cache.should_receive(:fetch).once.with(cache_key)
+      subject
+    end
+  end
+
+  describe 'cache_key' do
+    let(:order) { create :order_with_line_items }
+
+    subject { calculator.send(:cache_key, order) }
+
+    it 'should contain the order id and order updated_at' do
+      subject.should include(order.id.to_s)
+      subject.should include(order.updated_at.to_f.to_s)
+    end
+
+    it 'should contain each line item id and updated_at' do
+      order.line_items.each do |line_item|
+        subject.should include(line_item.id.to_s)
+        subject.should include(line_item.updated_at.to_f.to_s)
+      end
     end
   end
 end

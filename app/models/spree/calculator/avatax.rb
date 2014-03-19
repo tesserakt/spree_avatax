@@ -41,11 +41,31 @@ module Spree
       end
 
       def avatax_compute_order(order)
+        # This is called in Spree 2-1
         SpreeAvatax::AvataxComputer.new.compute_order_with_context(order, self)
       end
   
       def avatax_compute_line_item(line_item)
-        compute_line_item(line_item)
+        # This is called in Spree 2-2 :(
+        cached_order = Rails.cache.fetch(cache_key(line_item.order))
+        if cached_order.nil?
+          order = line_item.order
+          SpreeAvatax::AvataxComputer.new.compute_order_with_context(order, self)
+          Rails.cache.write(cache_key(order), order, expires_in: 1.minute)
+        else
+          order = cached_order
+        end
+        tax_line_item = order.line_items.select { |li| li.id = line_item.id }.first
+        tax_line_item.additional_tax_total
+      end
+
+      ##
+      # Build a cache key contain line items + orders + timestamps for changes
+      #
+      def cache_key(order)
+        order.line_items.map do |li|
+          "#{li.id}#{li.updated_at.to_f}"
+        end.join("") + "#{order.id}#{order.updated_at.to_f}"
       end
     end
   end

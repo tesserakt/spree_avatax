@@ -76,17 +76,6 @@ describe Spree::Calculator::Avatax do
     end
   end
 
-  describe 'avatax_compute_order' do
-    let(:order) { create :order }
-
-    subject { calculator.send(:avatax_compute_order, order) }
-
-    it 'should call SpreeAvatax::AvataxCalculator.compute_order' do
-      SpreeAvatax::AvataxComputer.any_instance.should_receive(:compute_order_with_context).once.with(order, calculator)
-      subject
-    end
-  end
-
   describe 'avatax_compute_line_item' do
     let(:line_item) { FactoryGirl.create(:line_item) }
     let(:order) { line_item.order }

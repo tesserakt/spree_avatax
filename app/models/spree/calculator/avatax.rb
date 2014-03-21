@@ -40,11 +40,6 @@ module Spree
         self.calculable
       end
 
-      def avatax_compute_order(order)
-        # This is called in Spree 2-1
-        SpreeAvatax::AvataxComputer.new.compute_order_with_context(order, self)
-      end
-  
       def avatax_compute_line_item(line_item)
         # This is called in Spree 2-2 :(
         order = Rails.cache.fetch(cache_key(line_item.order), expires_in: 1.minute) do

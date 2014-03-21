@@ -56,7 +56,7 @@ module Spree
       def cache_key(order)
         order.line_items.map do |li|
           "#{li.id}#{li.updated_at.to_f}"
-        end.join("") + "#{order.id}#{order.updated_at.to_f}"
+        end.join("|") + "#{order.id}|#{order.updated_at.to_f}"
       end
     end
   end

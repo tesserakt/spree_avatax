@@ -105,7 +105,7 @@ describe Spree::Calculator::Avatax do
     end
 
     it 'tries to read from the cache' do
-      Rails.cache.should_receive(:fetch).once.with(cache_key)
+      Rails.cache.should_receive(:fetch).once.and_return(order)
       subject
     end
   end

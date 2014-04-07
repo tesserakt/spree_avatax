@@ -57,9 +57,21 @@ describe Spree::Order do
         order.adjustments << Spree::Adjustment.create!(originator_type: "Spree::PromotionAction", eligible: true, amount: -10.99, order: order, label: 'Promo Two')
       end
 
-      it 'should have a promotion_adjustment_total of 10.99' do
+      it 'only sums eligible adjustments' do
         order.promotion_adjustment_total.should == 10.99
       end
+    end
+
+    context "the adjustment has no originator" do
+      before do
+        order.adjustments << Spree::Adjustment.create!(originator_type: "Spree::PromotionAction", eligible: true, amount: -5.0, order: order, label: 'Promo One')
+        order.adjustments << Spree::Adjustment.create!(originator_type: nil, eligible: true, amount: -10.99, order: order, label: 'Promo Two')
+      end
+
+      it "is excluded from the total" do
+        order.promotion_adjustment_total.should == 5.0
+      end
+
     end
   end
 end

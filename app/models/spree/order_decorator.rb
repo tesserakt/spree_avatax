@@ -30,7 +30,7 @@ module Spree
     #
     def promotion_adjustment_total 
       return 0 if adjustments.nil?
-      total = adjustments.select { |i| i.eligible == true && i.originator_type.constantize == Spree::PromotionAction}.inject(0) { |sum, i| sum + i.amount.to_f }
+      total = adjustments.select { |i| i.eligible == true && i.originator && i.originator_type.constantize == Spree::PromotionAction}.inject(0) { |sum, i| sum + i.amount.to_f }
       total.abs 
     end
   end

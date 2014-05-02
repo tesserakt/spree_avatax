@@ -23,8 +23,12 @@ class SpreeAvatax::TaxComputer
     logger.debug(tax_response)
 
     order.line_items.each do |line_item|
+
+
       tax_amount = tax_response.tax_lines.detect { |tl| tl.line_no == line_item.id.to_s }.try(:tax_calculated)
       raise MissingTaxAmountError if tax_amount.nil?
+
+      line_item.adjustments.tax.delete_all
 
       line_item.update_column(:pre_tax_amount, line_item.discounted_amount)
 

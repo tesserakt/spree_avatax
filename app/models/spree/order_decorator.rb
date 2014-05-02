@@ -18,6 +18,13 @@ Spree::Order.class_eval do
   def promotion_adjustment_total
     adjustments.promotion.eligible.sum(:amount).abs
   end
+  
+    # Creates new tax charges if there are any applicable rates. If prices already
+  # include taxes then price adjustments are created instead.
+  def create_tax_charge!
+    SpreeAvatax::TaxComputer.new(self).compute
+    Spree::TaxRate.adjust(self, shipments) if shipments.any?
+  end
 
   private
 

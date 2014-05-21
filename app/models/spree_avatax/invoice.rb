@@ -9,22 +9,27 @@ class SpreeAvatax::Invoice
     @doc_type = doc_type
     @order = order
     @logger = logger
+    @user = @order.user
     build_invoice
   end
 
   private
 
-  def build_invoice
+  def build_invoice()
     invoice = Avalara::Request::Invoice.new(
-      :customer_code => order.email, # TODO why are we sending the email here ?!? shouldnt this be an ID instead?
+      :customer_code => @user.try(:customer_code) || order.email, # TODO why are we sending the email here ?!? shouldnt this be an ID instead?
       :doc_date => Date.today,
       :doc_type => doc_type,
-      :company_code => SpreeAvatax::Config.company_code,
+      :company_code => ENV['AVATAX_COMPANY'],
       :discount => order.promotion_adjustment_total.round(2).to_f,
       :doc_code => order.number
     )
     invoice.addresses = build_invoice_addresses
     invoice.lines = build_invoice_lines
+    if @user.try(:exemption_number)
+      invoice.exemption_no = @user.exemption_number
+      invoice.customer_usage_type = 'G'
+    end
     logger.debug invoice.to_s
     @invoice = invoice
   end

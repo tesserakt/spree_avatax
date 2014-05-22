@@ -32,5 +32,9 @@ module Spree
     def compute_shipment(shipping_rate)
       raise NotImplementedError
     end
+    
+    # we don't calculate tax on shipments right now so just stub this out
+    def compute_shipping_rate shipping_rate
+    end
   end
 end

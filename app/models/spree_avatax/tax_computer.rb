@@ -1,7 +1,6 @@
 class SpreeAvatax::TaxComputer
   DEFAULT_DOC_TYPE = 'SalesOrder'
   DEFAULT_STATUS_FIELD = :avatax_response_at
-  DEFAULT_TAX_AMOUNT = 0.0
 
   class MissingTaxAmountError < StandardError; end
 
@@ -39,6 +38,7 @@ class SpreeAvatax::TaxComputer
         :label => Spree.t(:avatax_label),
         :included => false, # true for VAT
         :source => Spree::TaxRate.avatax_the_one_rate,
+        :state => 'closed', # this tells spree not to automatically recalculate avatax tax adjustments
       })
       Spree::ItemAdjustments.new(line_item).update
       line_item.save!
@@ -54,8 +54,8 @@ class SpreeAvatax::TaxComputer
   ##
   # Need to clean out old taxes and update to prevent the 10 to 1 "Jordan" bug.
   def reset_tax_attributes(order)
+    order.all_adjustments.tax.destroy_all
     order.line_items.each do |line_item|
-      line_item.adjustments.tax.delete_all
       line_item.update_attributes!({
         additional_tax_total: 0,
         adjustment_total: 0,

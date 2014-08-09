@@ -18,6 +18,7 @@ describe SpreeAvatax::TaxComputer do
         line_item.adjustments.tax.size.should == 1
         line_item.adjustments.each do |adjustment|
           adjustment.source.should_not be_nil
+          adjustment.state.should == 'closed'
         end
       end
     end
@@ -62,6 +63,20 @@ describe SpreeAvatax::TaxComputer do
     it 'should remove all eligible tax adjustments' do
       subject
       order.line_items.map { |li| li.adjustments.tax.size }.sum.should == 0
+    end
+
+    it 'should remove tax adjustments even if they are not reachable through a line item anymore' do
+      disassociated_adjustment = order.adjustments.eligible.tax.additional.create!({
+        adjustable_type: 'Spree::LineItem',
+        adjustable_id: 99999,
+        amount: 6.66,
+        order: order,
+        label: 'Test',
+        included: false
+      })
+      subject
+      # make sure this got deleted
+      expect { disassociated_adjustment.reload }.to raise_error(ActiveRecord::RecordNotFound)
     end
 
     [:additional_tax_total, :adjustment_total, :included_tax_total].each do |f|

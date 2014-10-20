@@ -32,19 +32,19 @@ class SpreeAvatax::TaxComputer
       line_item.update_column(:pre_tax_amount, line_item.discounted_amount)
 
       line_item.adjustments.tax.create!({
-        :adjustable => line_item,
-        :amount => tax_amount,
-        :order => @order,
-        :label => Spree.t(:avatax_label),
-        :included => false, # true for VAT
-        :source => Spree::TaxRate.avatax_the_one_rate,
-        :state => 'closed', # this tells spree not to automatically recalculate avatax tax adjustments
-      })
+                                            :adjustable => line_item,
+                                            :amount => tax_amount,
+                                            :order => @order,
+                                            :label => Spree.t(:avatax_label),
+                                            :included => false, # true for VAT
+                                            :source => Spree::TaxRate.avatax_the_one_rate,
+                                            :state => 'closed', # this tells spree not to automatically recalculate avatax tax adjustments
+                                        })
       Spree::ItemAdjustments.new(line_item).update
       line_item.save!
     end
 
-    Spree::OrderUpdater.new(order).update
+    Spree::OrderUpdater.new(order, refresh_rates: false).update
     order[status_field] = Time.now
     order.save!
   rescue Avalara::ApiError, Avalara::TimeoutError, Avalara::Error => e
@@ -57,23 +57,23 @@ class SpreeAvatax::TaxComputer
     order.all_adjustments.tax.destroy_all
     order.line_items.each do |line_item|
       line_item.update_attributes!({
-        additional_tax_total: 0,
-        adjustment_total: 0,
-        pre_tax_amount: 0,
-        included_tax_total: 0,
-      })
+                                       additional_tax_total: 0,
+                                       adjustment_total: 0,
+                                       pre_tax_amount: 0,
+                                       included_tax_total: 0,
+                                   })
 
       Spree::ItemAdjustments.new(line_item).update
       line_item.save!
     end
 
     order.update_attributes!({
-      additional_tax_total: 0,
-      adjustment_total: 0,
-      included_tax_total: 0,
-    })
+                                 additional_tax_total: 0,
+                                 adjustment_total: 0,
+                                 included_tax_total: 0,
+                             })
 
-    Spree::OrderUpdater.new(order).update
+    Spree::OrderUpdater.new(order, refresh_rates: false).update
     order.save!
   end
 

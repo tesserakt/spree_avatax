@@ -3,7 +3,11 @@ Spree::OrderUpdater.class_eval do
   attr_reader :refresh_rates
   def initialize(order, options = {})
     @order = order
-    @refresh_rates = (options[:refresh_rates].present? ? options[:refresh_rates] : true)
+    if options && options.has_key?(:refresh_rates)
+      @refresh_rates = options[:refresh_rates]
+    else
+      @refresh_rates = true
+    end
   end
 
   # give each of the shipments a chance to update themselves

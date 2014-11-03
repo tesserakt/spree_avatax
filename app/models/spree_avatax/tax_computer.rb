@@ -14,9 +14,8 @@ class SpreeAvatax::TaxComputer
   end
 
   def compute
-    return unless order.avataxable?
-
     reset_tax_attributes(order)
+    return unless order.avataxable?
 
     tax_response = Avalara.get_tax(invoice_for_order)
     logger.debug(tax_response)

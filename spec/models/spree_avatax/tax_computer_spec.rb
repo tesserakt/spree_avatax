@@ -150,15 +150,15 @@ describe SpreeAvatax::TaxComputer do
 
     context "avalara errors" do
       before do
-        Spree::Order.any_instance.stub(:avataxable?).and_return(false)
+        Spree::Order.any_instance.stub(:avataxable?).and_return(true)
         Avalara.stub(:get_tax).and_raise(Avalara::ApiError)
       end
 
       it "handles them gracefully" do
         order.send("#{status_field}=", 1.minute.ago)
-        expect { calculator.logger.to_receive(:error).with(kind_of(Avalara::ApiError)) }
-        expect { Honeybadger.to_receive(:notify).with(kind_of(Avalara::ApiError)) }
-        expect { subject }.not_to raise_error
+        expect(calculator.logger).to receive(:error).with(kind_of(Avalara::ApiError))
+        expect(Honeybadger).to receive(:notify).with(kind_of(Avalara::ApiError))
+        expect(subject).not_to raise_error
         expect(order.reload.send(status_field)).to be_nil
       end
     end

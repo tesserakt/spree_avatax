@@ -12,7 +12,7 @@ describe SpreeAvatax::Invoice do
 
   describe "#new" do
     before do
-      SpreeAvatax::Config.company_code = "foo"
+      ENV['AVATAX_COMPANY'] = "foo"
       order.line_items.first.product.tax_category.tax_rates << tax_rate
     end
 
